@@ -30,11 +30,33 @@ def produtos():
 
     try:
         decoded = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
-        return jsonify(products)
     except jwt.ExpiredSignatureError:
         return jsonify(message="Token expirado! Faça login novamente."), 401
     except jwt.InvalidTokenError:
         return jsonify(message="Token inválido!"), 403
+
+    filtro_asc = request.args.get('filtro_asc', '')
+    filtro_desc = request.args.get('filtro_desc', '')
+    filtro_descricao = request.args.get('description_part', '')
+
+    dicionario_filtro = [produto for produto in products if filtro_descricao in produto['product_description']]
+
+    if filtro_asc:
+        if dicionario_filtro:
+            dicionario_filtro = sorted(dicionario_filtro, key=lambda x: x['product_price'], reverse=False)
+        else:
+            dicionario_filtro = sorted(products, key=lambda x: x['product_price'], reverse=False)
+
+    elif filtro_desc:
+        if dicionario_filtro:
+            dicionario_filtro = sorted(dicionario_filtro, key=lambda x: x['product_price'], reverse=True)
+        else:
+            dicionario_filtro = sorted(products, key=lambda x: x['product_price'], reverse=True)
+
+    if dicionario_filtro:
+        return jsonify(dicionario_filtro)
+    else:
+        return jsonify(products)
 
 @app.route('/produtos/<int:id>', methods=['GET'])
 def produto_por_id(id):
